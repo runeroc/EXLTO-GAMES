@@ -14,6 +14,11 @@
             padding: 0;
             background-color: #f8f9fa;
             color: #212529;
+            transition: background-color 0.5s;
+        }
+        body.dark-theme {
+            background-color: #212529;
+            color: #f8f9fa;
         }
         header {
             background: #343a40;
@@ -87,6 +92,9 @@
             border-radius: 5px;
             font-size: 1em;
         }
+        .filters input {
+            width: 100%;
+        }
         .game-list {
             display: flex;
             flex-direction: column;
@@ -154,6 +162,13 @@
             background: #007bff;
             color: #fff;
         }
+        .comment-item {
+            background: #f1f1f1;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
         footer {
             background: #343a40;
             color: #fff;
@@ -176,6 +191,14 @@
                 width: 100%;
                 height: auto;
             }
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filters input, .filters select {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -191,7 +214,8 @@
             <section class="section">
                 <h2>Останні Ігри</h2>
                 <div class="filters">
-                    <input type="text" id="search" placeholder="Пошук...">
+                    <input type="text" id="search" placeholder="Пошук..." list="suggestions">
+                    <datalist id="suggestions"></datalist>
                     <select id="filter">
                         <option value="">Всі категорії</option>
                         <option value="action">Action</option>
@@ -206,6 +230,7 @@
                 </div>
                 <div class="pagination">
                     <button id="prev-page">« Попередня</button>
+                    <span id="page-numbers"></span>
                     <button id="next-page">Наступна »</button>
                 </div>
             </section>
@@ -220,14 +245,33 @@
                 <p>Щоб бути в курсі всіх новин і отримувати останні посилання на ігри, підписуйся на наш канал:</p>
                 <a href="https://t.me/EXLTO_GAMES" target="_blank">Перейти до каналу</a>
             </section>
+
+            <section class="section">
+                <h2>Коментарі та Рейтинг</h2>
+                <form id="comment-form">
+                    <label for="game-title">Назва гри:</label>
+                    <input type="text" id="game-title" required>
+                    <label for="rating">Рейтинг (1-5):</label>
+                    <input type="number" id="rating" min="1" max="5" required>
+                    <label for="comment">Коментар:</label>
+                    <textarea id="comment" required></textarea>
+                    <button type="submit">Додати коментар</button>
+                </form>
+                <div id="comments-list">
+                    <!-- Коментарі будуть додані тут через JavaScript -->
+                </div>
+            </section>
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2024 EXLTO-GAMES Все про Ігри. Всі права захищені.</p>
+        <div class="container">
+            <p>© 2024 EXLTO-GAMES. Усі права захищені.</p>
+        </div>
     </footer>
 
     <script>
+        // Приклад даних ігор
         const games = [
             { title: "Assassin’s Creed", image: "https://upload.wikimedia.org/wikipedia/ru/thumb/5/52/Assassin%27s_Creed.jpg/230px-Assassin%27s_Creed.jpg", description: "Екшн-гра про пригоди асасинів.", category: "action", downloadLink: "https://drive.usercontent.google.com/download?id=1aQxLI8jE76buii8lbe5cN5QtJf4yDTNg&export=download&authuser=0" },
             { title: "Hitman: Absolution", image: "https://upload.wikimedia.org/wikipedia/uk/9/96/%D0%9E%D0%B1%D0%BA%D0%BB%D0%B0%D0%B4%D0%B8%D0%BD%D0%BA%D0%B0_Hitman_Absolution.jpg", description: "Пригодницький екшн про найманого вбивцю.", category: "action", downloadLink: "https://drive.usercontent.google.com/download?id=1dn-gttyU8bvcMCu7dj3svAn6dS04RM-N&export=download&authuser=0" },
@@ -238,89 +282,130 @@
             { title: "Assassin’s Creed III", image: "https://upload.wikimedia.org/wikipedia/ru/thumb/a/a6/Cover_art_for_Assassin%27s_Creed_III%2C_Mar_2012.jpg/274px-Cover_art_for_Assassin%27s_Creed_III%2C_Mar_2012.jpg", description: "Assassin’s Creed III — це екшн-адвенчур, що відбувається під час Американської революції. Гравець грає за Коннора Кенвея, напівіндіанця та Асассина, який бореться за свободу і справедливість.", category: "Action", downloadLink: "https://drive.usercontent.google.com/download?id=110WsNiVQzFvCYMnkzyA_sZ5eDmsn1wTD&export=download&authuser=0" },
             { title: "Assassin's Creed IV: Black Flag", image: "https://upload.wikimedia.org/wikipedia/en/thumb/2/28/Assassin%27s_Creed_IV_-_Black_Flag_cover.jpg/220px-Assassin%27s_Creed_IV_-_Black_Flag_cover.jpg", description: "Assassin’s Creed IV: Black Flag — це екшн-адвенчур, що відбувається в епоху піратства на Карибах. Гравець грає за Едварда Кенвея, пірата і Асассина,.", category: "Action", downloadLink: "https://drive.usercontent.google.com/download?id=1472ewbJ3evryGb8DxB_5AlZCQ3_SkR4G&export=download&authuser=0" },
             { title: "Assassin's Creed Rogue", image: "https://upload.wikimedia.org/wikipedia/en/thumb/a/ae/Assassin%27s_Creed_Rogue.jpg/220px-Assassin%27s_Creed_Rogue.jpg", description: "Assassin’s Creed Rogue — це екшн-адвенчур, в якому гравець бере на себе роль Шея Патріка Кормака, колишнього Асассина, який стає Тамплієром. Події гри відбуваються під час Семирічної війни.", category: "action", downloadLink: "https://drive.usercontent.google.com/download?id=1B7Gjnyj8H1TiZ4-DK8gqph7K6suFg6wI&export=download&authuser=0" },
-
-     // Додати більше ігор тут
+            // Додати більше ігор тут
         ];
 
         const itemsPerPage = 3;
         let currentPage = 1;
 
-        const gameList = document.getElementById('game-list');
-        const prevPageBtn = document.getElementById('prev-page');
-        const nextPageBtn = document.getElementById('next-page');
-
-        function renderGames(page) {
+        function renderGames() {
+            const gameList = document.getElementById('game-list');
             gameList.innerHTML = '';
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedGames = games.slice(start, end);
+
+            const filteredGames = games.filter(game => {
+                const filterValue = document.getElementById('filter').value;
+                return filterValue === '' || game.category === filterValue;
+            });
+
+            const paginatedGames = filteredGames.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
             paginatedGames.forEach(game => {
                 const gameItem = document.createElement('div');
                 gameItem.className = 'game-item';
-                gameItem.dataset.category = game.category;
                 gameItem.innerHTML = `
                     <img src="${game.image}" alt="${game.title}">
                     <div class="game-info">
-                        <h3 class="game-title">${game.title}</h3>
+                        <h3>${game.title}</h3>
                         <p>${game.description}</p>
-                        <a href="${game.downloadLink}" download>Скачати</a>
+                        <a href="${game.link}" target="_blank">Перейти до гри</a>
                     </div>
                 `;
                 gameList.appendChild(gameItem);
             });
 
-            prevPageBtn.disabled = page === 1;
-            nextPageBtn.disabled = page * itemsPerPage >= games.length;
+            updatePagination();
         }
 
-        function handlePageChange(direction) {
-            if (direction === 'next') {
-                if (currentPage * itemsPerPage < games.length) {
-                    currentPage++;
-                    renderGames(currentPage);
+        function updatePagination() {
+            const totalPages = Math.ceil(games.length / itemsPerPage);
+            const pageNumbers = document.getElementById('page-numbers');
+            pageNumbers.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    renderGames();
+                });
+                if (i === currentPage) {
+                    button.disabled = true;
                 }
-            } else if (direction === 'prev') {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderGames(currentPage);
-                }
+                pageNumbers.appendChild(button);
             }
         }
 
-        prevPageBtn.addEventListener('click', () => handlePageChange('prev'));
-        nextPageBtn.addEventListener('click', () => handlePageChange('next'));
-
-        // Запуск відображення ігор на першій сторінці
-        renderGames(currentPage);
-
-        // Фільтрація ігор за категорією
-        const filterSelect = document.getElementById('filter');
-        filterSelect.addEventListener('change', (event) => {
-            const category = event.target.value;
-            gameItems.forEach(item => {
-                if (category === "" || item.dataset.category === category) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+        document.getElementById('filter').addEventListener('change', () => {
+            currentPage = 1;
+            renderGames();
         });
 
-        // Пошук ігор
-        const searchInput = document.getElementById('search');
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            gameItems.forEach(item => {
-                const title = item.querySelector('.game-title').textContent.toLowerCase();
-                if (title.includes(query)) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderGames();
+                updatePagination();
+            }
         });
-    </script>  
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            const totalPages = Math.ceil(games.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderGames();
+                updatePagination();
+            }
+        });
+
+        function updateBackground() {
+            const hour = new Date().getHours();
+            if (hour >= 6 && hour < 18) {
+                document.body.classList.add('day');
+                document.body.classList.remove('night');
+            } else {
+                document.body.classList.add('night');
+                document.body.classList.remove('day');
+            }
+        }
+
+        updateBackground();
+
+        const suggestions = games.map(game => game.title);
+        const suggestionsList = document.getElementById('suggestions');
+
+        suggestions.forEach(suggestion => {
+            const option = document.createElement('option');
+            option.value = suggestion;
+            suggestionsList.appendChild(option);
+        });
+
+        const commentForm = document.getElementById('comment-form');
+        const commentsList = document.getElementById('comments-list');
+
+        commentForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const gameTitle = document.getElementById('game-title').value;
+            const rating = document.getElementById('rating').value;
+            const comment = document.getElementById('comment').value;
+            
+            const commentItem = document.createElement('div');
+            commentItem.className = 'comment-item';
+            commentItem.innerHTML = `
+                <h4>${gameTitle}</h4>
+                <p>Рейтинг: ${rating}</p>
+                <p>${comment}</p>
+            `;
+            commentsList.appendChild(commentItem);
+            
+            commentForm.reset();
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+        });
+
+        renderGames();
+    </script>
 </body>
 </html>
 
