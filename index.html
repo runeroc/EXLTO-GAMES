@@ -333,14 +333,13 @@
             }
         });
 
-        document.getElementById('next-page').addEventListener('click', () => {
-            const totalPages = Math.ceil(games.length / itemsPerPage);
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderGames();
-                updatePagination();
-            }
-        });
+       document.getElementById('next-page').addEventListener('click', () => {
+    const totalPages = Math.ceil(games.length / itemsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderGames();
+    }
+});
 
         function updateBackground() {
             const hour = new Date().getHours();
