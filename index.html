@@ -273,9 +273,19 @@
         const itemsPerPage = 3;
         let currentPage = 1;
 
-        function renderGames() {
-            const gameList = document.getElementById('game-list');
-            gameList.innerHTML = '';
+function renderGameItem(game) {
+    const gameItem = document.createElement('div');
+    gameItem.className = 'game-item';
+    gameItem.innerHTML = `
+        <img src="${game.image}" alt="${game.title}" title="${game.title}">
+        <div class="game-info">
+            <h3>${game.title}</h3>
+            <p>${game.description}</p>
+            <a href="${game.downloadLink}">Скачати</a> <!-- Видалено target="_blank" -->
+        </div>
+    `;
+    return gameItem;
+}
 
             const filteredGames = games.filter(game => {
                 const filterValue = document.getElementById('filter').value;
